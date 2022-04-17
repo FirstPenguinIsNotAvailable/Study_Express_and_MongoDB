@@ -4,6 +4,7 @@
 // https://velog.io/@ragnarok_code/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%A0%95%EB%A6%AC-%EB%AA%BD%EA%B5%AC%EC%8A%A4-%EC%8A%A4%ED%82%A4%EB%A7%88-%EC%A0%95%EB%A6%AC#%EB%AA%BD%EA%B5%AC%EC%8A%A4-%EB%A9%94%EC%84%9C%EB%93%9C-%EC%A0%95%EB%A6%AC
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const geocoder = require('../utils/geocoder');
 
 const BootcampSchema = new mongoose.Schema({
     name: {
@@ -114,6 +115,26 @@ const BootcampSchema = new mongoose.Schema({
 BootcampSchema.pre('save', function(next) {
     this.slug = slugify(this.name, { lower: true });
     next();
-})
+});
+
+// Geocode & create location field
+BootcampSchema.pre('save', async function(next){
+    const loc = await geocoder.geocode(this.address);
+    this.location = {
+        type: 'Point',
+        coordinates: [loc[0].longitude, loc[0].latitude],
+        formattedAddress: loc[0].formattedAddress,
+        street: loc[0].streetName,
+        city: loc[0].city,
+        state: loc[0].stateCode,
+        zipcode: loc[0].zipCode,
+        country: loc[0].countryCode
+    };
+
+    // Do not save address in DB
+    this.address = undefined;
+
+    next();
+});
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);
