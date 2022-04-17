@@ -1,8 +1,10 @@
-
+// mongoose란
 // https://mongoosejs.com/docs/index.html
 // https://rain2002kr.tistory.com/342
 // https://velog.io/@ragnarok_code/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EC%A0%95%EB%A6%AC-%EB%AA%BD%EA%B5%AC%EC%8A%A4-%EC%8A%A4%ED%82%A4%EB%A7%88-%EC%A0%95%EB%A6%AC#%EB%AA%BD%EA%B5%AC%EC%8A%A4-%EB%A9%94%EC%84%9C%EB%93%9C-%EC%A0%95%EB%A6%AC
 const mongoose = require('mongoose');
+const slugify = require('slugify');
+
 const BootcampSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -11,6 +13,9 @@ const BootcampSchema = new mongoose.Schema({
         trim: true,
         maxlength: [50, 'Name can not be more than 50 characters']
     },
+    // slug: 일반적으로 이미 확보된 데이터로부터 유효한 URL을 만드는 방법입니다.
+    // 예를 들어, name이 meaningful 한 내용이 있다고 하면 이를 참고해서 URL을 만드는 것이다.
+    // ref: https://itmining.tistory.com/119
     slug: String,
     description: {
         type: String,
@@ -104,5 +109,11 @@ const BootcampSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+// Create bootcamp slug from the name
+BootcampSchema.pre('save', function(next) {
+    this.slug = slugify(this.name, { lower: true });
+    next();
+})
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);
