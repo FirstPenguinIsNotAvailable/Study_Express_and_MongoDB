@@ -22,22 +22,11 @@ HTTP 헤더에서 cache-control 헤더를 통해 캐시 옵션을 지정할 수 
     5. GET 요청은 중요한 정보를 다루면 안된다. ( 보안 )
     : GET 요청은 파라미터에 다 노출되어 버리기 때문에 최소한의 보안 의식이라 생각하자.
  */
-/*
-app.get('/', (req, res) => {
-    //res.contentType = 'text/html'
-    //res.send('<h1>Hello from express</h1>');
-    //res.send({ name: 'Brad' });
-    //res.json({ name: 'Brad' });
-    //res.status(400).json({ success: false });
-    //res.sendStatus(400);
- 
-    res.status(200).json({ success: true , data: { id: 1 } });
-});
-*/
 
 const Bootcamp = require('../models/Bootcamp');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
+const geocoder = require('../utils/geocoder');
 
 
 // @desc    Get all bootcamps
@@ -139,4 +128,34 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({ success: true, data: req.body });
 
+});
+
+// @desc    Get bootcamps within a radius
+// @route   GET /api/v1/bootcamps/radius/:zipcode/:distance
+// @access  Private 
+exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
+    const { zipcode, distance } = req.params;
+
+    // Get lat/lng from geocoder
+    const loc = await geocoder.geocode(zipcode);
+    
+    const lat = loc[0].latitude;
+    const lng = loc[0].longitude;
+
+    // Calculus radius using radians
+
+    // Divide dist by radius of Earth
+    // Earth Radius = 3,963 mi / 6,378 km
+
+    const radius = distance / 6378;
+
+    const bootcamps = await Bootcamp.find({
+        location: { $geoWithin: { $centerSphere: [ [ lng, lat ], radius ]}}
+    });
+
+    res.status(200).json({
+        success: true,
+        count: bootcamps.length,
+        data: bootcamps
+    });
 });
