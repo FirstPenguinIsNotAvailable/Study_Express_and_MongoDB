@@ -112,6 +112,7 @@ const BootcampSchema = new mongoose.Schema({
 });
 
 // Create bootcamp slug from the name
+// Mongoose에서 pre는 어떤 action을 하기 전 단계를 의미한다.
 BootcampSchema.pre('save', function(next) {
     this.slug = slugify(this.name, { lower: true });
     next();
