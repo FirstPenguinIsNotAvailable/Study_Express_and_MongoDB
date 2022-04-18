@@ -27,7 +27,6 @@ const Bootcamp = require('../models/Bootcamp');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const geocoder = require('../utils/geocoder');
-const { query } = require('express');
 
 
 // @desc    Get all bootcamps
@@ -38,8 +37,8 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     const reqQuery = { ...req.query };
 
     // Fields to exclude for filtering
-        // i don't wanna include with select, sort for selection below
-    const removeFields = ['select', 'sort'];
+        // i don't wanna include some commands in the document
+    const removeFields = ['select', 'sort', 'page', 'limit'];
 
     // Loop over removeFields and delete them from reqQuery
     removeFields.forEach(param => delete reqQuery[param]);
@@ -49,7 +48,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     let queryStr = JSON.stringify(reqQuery);
 
     // I would like to make averageCost[lte]=10000 in the form of mongoDB operator
-    // such that { averageCost: { $lte: 10000 }} but now, we got { averageCost: { gt: 10000 }}
+    // such that { averageCost: { $lte: 10000 }} but now, we got { averageCost: { lte: 10000 }}
     // therefore, somehow, we got to put $ sign in there.
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
@@ -61,13 +60,8 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     // query for selection should be just like this ?select=housing,name 
     // i should know that the form of selection of query is select('<value1> <value2>') which means
     // it's divided by white space. 
-
-    //console.log(query);
-
     if(req.query.select){
-        //console.log("working");
         const fields = req.query.select.split(',').join(' ');
-        console.log(query);
         query.select(fields);
     }
     
@@ -80,10 +74,39 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
         query = query.sort('-createdAt');
     }
 
+    // Pagination
+    // page is showing a data from the 'page' given by query
+    // limit is how many datas it's gonna show  .
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 25;
+    const startIdx = (page - 1);
+    const endIdx = page;
+    const total = await Bootcamp.countDocuments();
+
+    // Basically, skip function will skip the datas up to the given value 
+    query = query.skip(startIdx).limit(limit);
+
     const bootcamps = await query;
 
+    // Pagination result
+    const pagination = {};
 
-    res.status(200).json({ success: true, data: bootcamps, cout: bootcamps.length });
+    if(endIdx < total) {
+        pagination.next = {
+            page: page + 1,
+            limit
+        };
+    }
+
+    if(startIdx > 0) {
+        pagination.prev = {
+            page: page - 1,
+            limit
+        };
+    }
+
+    res.status(200).json({ success: true, cout: bootcamps.length, pagination, data: bootcamps });
 });
 
 // @desc    Get single bootcamps
