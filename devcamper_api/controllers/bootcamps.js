@@ -33,8 +33,18 @@ const geocoder = require('../utils/geocoder');
 // @route   Get /api/v1/bootcamps/:id
 // @access  Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-    //res.status(200).json({ success: true, msg: 'Show all bootcamps', hello: req.hello });
-    const bootcamps = await Bootcamp.find();
+    // query will come in this way such as /api/v1/bootcamps?averageCost[lte]=10000&housing=true
+    // more preciesly, here query is averageCost[lte]=10000, housing=ture
+    let queryStr = JSON.stringify(req.query);
+
+
+    // I would like to make averageCost[lte]=10000 in the form of mongoDB operator
+    // such that { averageCost: { $lte: 10000 }} but now, we got { averageCost: { gt: 10000 }}
+    // therefore, we got to use replace.
+    queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+
+    // After the code, we can find data whose averageCost is less or equal to 10000.
+    const bootcamps = await Bootcamp.find(JSON.parse(queryStr));
 
     res.status(200).json({ success: true, data: bootcamps, cout: bootcamps.length });
 });
@@ -149,6 +159,9 @@ exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
 
     const radius = distance / 6378;
 
+    // Code below is finding some datas from DB based on the command 
+    // that is already given by mongoose
+    // https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/
     const bootcamps = await Bootcamp.find({
         location: { $geoWithin: { $centerSphere: [ [ lng, lat ], radius ]}}
     });
