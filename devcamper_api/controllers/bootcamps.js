@@ -27,24 +27,61 @@ const Bootcamp = require('../models/Bootcamp');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const geocoder = require('../utils/geocoder');
+const { query } = require('express');
 
 
 // @desc    Get all bootcamps
 // @route   Get /api/v1/bootcamps/:id
 // @access  Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
+    let query;
+    const reqQuery = { ...req.query };
+
+    // Fields to exclude for filtering
+        // i don't wanna include with select, sort for selection below
+    const removeFields = ['select', 'sort'];
+
+    // Loop over removeFields and delete them from reqQuery
+    removeFields.forEach(param => delete reqQuery[param]);
+
     // query will come in this way such as /api/v1/bootcamps?averageCost[lte]=10000&housing=true
     // more preciesly, here query is averageCost[lte]=10000, housing=ture
-    let queryStr = JSON.stringify(req.query);
-
+    let queryStr = JSON.stringify(reqQuery);
 
     // I would like to make averageCost[lte]=10000 in the form of mongoDB operator
     // such that { averageCost: { $lte: 10000 }} but now, we got { averageCost: { gt: 10000 }}
-    // therefore, we got to use replace.
+    // therefore, somehow, we got to put $ sign in there.
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
     // After the code, we can find data whose averageCost is less or equal to 10000.
-    const bootcamps = await Bootcamp.find(JSON.parse(queryStr));
+    // as well as we can get whose housing is true.
+    query = Bootcamp.find(JSON.parse(queryStr));
+
+    // Select Fields
+    // query for selection should be just like this ?select=housing,name 
+    // i should know that the form of selection of query is select('<value1> <value2>') which means
+    // it's divided by white space. 
+
+    //console.log(query);
+
+    if(req.query.select){
+        //console.log("working");
+        const fields = req.query.select.split(',').join(' ');
+        console.log(query);
+        query.select(fields);
+    }
+    
+    // Sort
+    // query for sort should be just like this ?sort=name
+    if(req.query.sort){
+        const sortBy = req.query.sort.split(',').join(' ');
+        query = query.sort(sortBy);
+    } else {
+        query = query.sort('-createdAt');
+    }
+
+    const bootcamps = await query;
+
 
     res.status(200).json({ success: true, data: bootcamps, cout: bootcamps.length });
 });
