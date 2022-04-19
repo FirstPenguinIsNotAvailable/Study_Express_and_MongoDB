@@ -54,7 +54,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
 
     // After the code, we can find data whose averageCost is less or equal to 10000.
     // as well as we can get whose housing is true.
-    query = Bootcamp.find(JSON.parse(queryStr));
+    query = Bootcamp.find(JSON.parse(queryStr)).populate('courses');
 
     // Select Fields
     // query for selection should be just like this ?select=housing,name 
@@ -179,7 +179,6 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
     }
 
     res.status(200).json({ success: true, data: bootcamp });
-
 });
 
 // @desc    Delete new bootcamp
@@ -188,13 +187,15 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
     //res.status(200).json({ success: true, msg: `Delete bootcamp ${req.params.id}` });
 
-    const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);
+    const bootcamp = await Bootcamp.findById(req.params.id);
 
     if (!bootcamp) {
         return next(
             new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
         );
     }
+
+    bootcamp.remove();
 
     res.status(200).json({ success: true, data: req.body });
 

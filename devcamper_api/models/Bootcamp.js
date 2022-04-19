@@ -109,6 +109,17 @@ const BootcampSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, {
+
+    // when datas with query upload in the database,
+    // virtuals can be converted to JSON with this code 
+    // toJSON: { virtuals: true } 
+    toJSON: { virtuals: true },
+
+    // https://velog.io/@modolee/mongodb-document-to-javascript-object#plain-old-javascript-object-pojo
+    // it is not the data of POJO through mongoose Query but Moogoose Document.
+    // we can get only POJO type from moogoose document.
+    toObject: { virtuals: true }
 });
 
 // Create bootcamp slug from the name
@@ -137,5 +148,25 @@ BootcampSchema.pre('save', async function(next){
 
     next();
 });
+
+// Cascade delete courses when a bootcamp is deleted
+BootcampSchema.pre('remove', async function (next) {
+    // we can remove courses which are part of the bootcamp before deleting the bootcamp.
+    console.log(`Courses being removed from bootcamp ${this._id}`)
+    await this.model('Course').deleteMany({ bootcamp: this._id });
+    next();
+});
+
+// Reverse populate with virtuals
+BootcampSchema.virtual('courses', {
+    ref: 'Course',
+    // Mongoose will populate documents from the model 
+    // in ref whose foreignField matches this document's localField.
+    localField: '_id',
+    foreignField: 'bootcamp',
+    // [options.justOne=false] «boolean» by default, a populated virtual is an array. 
+    // If you set justOne, the populated virtual will be a single doc or null.
+    justOne: false
+})
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);
