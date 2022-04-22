@@ -167,6 +167,6 @@ BootcampSchema.virtual('courses', {
     // [options.justOne=false] «boolean» by default, a populated virtual is an array. 
     // If you set justOne, the populated virtual will be a single doc or null.
     justOne: false
-})
+});
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema);

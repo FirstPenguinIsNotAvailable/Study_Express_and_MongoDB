@@ -9,7 +9,8 @@ const {
     createBootcamp, 
     updateBootcamp, 
     deleteBootcamp,
-    getBootcampsInRadius } = require('../controllers/bootcamps');
+    getBootcampsInRadius,
+    uploadBootcampPhoto } = require('../controllers/bootcamps');
 
 
 // Include other resource routers
@@ -23,6 +24,8 @@ const router = express.Router();
 // when we got query such as "/api/v1/bootcamps"
 // eventually, we can implement /api/v1/bootcamps/:bootcampId/courses here.
 router.use('/:bootcampId/courses', courseRouter);
+
+router.route('/:id/photo').put(uploadBootcampPhoto);
 
 router
     .route('/')

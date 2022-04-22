@@ -37,21 +37,19 @@ const CourseSchema = new mongoose.Schema({
         type: Date, 
         default: Date.now
     },
-
+    
     // Basically, Each courses needs to be connected with a bootcamp at least.
     // we gonna connect it with bootcamp by using id
     bootcamp: {
         type: mongoose.Schema.ObjectId,
         ref: 'Bootcamp',
-        required: true  
+        required: true
     }
 });
 
 
 // Static method to get average of course tuitions
 CourseSchema.statics.getAverageCost = async function(bootcampId){
-    console.log('Calculating avg cost...'.blue);
-
     /**
      * * The order of implementation for aggregate
      * => collection > $project > $match > $group > $sort > $skip > $limit > $unwind > $out
@@ -98,7 +96,6 @@ CourseSchema.statics.getAverageCost = async function(bootcampId){
 
 // Call getAverageCost after save
 CourseSchema.post('save', function() {
-    console.log(this.getAverageCost);
     this.constructor.getAverageCost(this.bootcamp);
 });
 
