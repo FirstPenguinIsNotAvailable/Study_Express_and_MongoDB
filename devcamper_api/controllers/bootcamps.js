@@ -20,7 +20,7 @@ HTTP 헤더에서 cache-control 헤더를 통해 캐시 옵션을 지정할 수 
     : GET 요청의 길이 제한은 표준이 따로 있는건 아니고 브라우저마다 제한이 다르다고 한다. 
 
     5. GET 요청은 중요한 정보를 다루면 안된다. ( 보안 )
-    : GET 요청은 파라미터에 다 노출되어 버리기 때문에 최소한의 보안 의식이라 생각하자.
+    : GET 요청은 파라미터에 다 노출되어 버리기 때문에 최소한의 보안 의식이라 생각하자. 
  */
 
 const Bootcamp = require('../models/Bootcamp');
@@ -34,80 +34,7 @@ const path = require('path');
 // @route   Get /api/v1/bootcamps
 // @access  Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-    let query;
-    const reqQuery = { ...req.query };
-
-    // Fields to exclude for filtering
-        // i don't wanna include some commands in the document
-    const removeFields = ['select', 'sort', 'page', 'limit'];
-
-    // Loop over removeFields and delete them from reqQuery
-    removeFields.forEach(param => delete reqQuery[param]);
-
-    // query will come in this way such as /api/v1/bootcamps?averageCost[lte]=10000&housing=true
-    // more preciesly, here query is averageCost[lte]=10000, housing=ture
-    let queryStr = JSON.stringify(reqQuery);
-
-    // I would like to make averageCost[lte]=10000 in the form of mongoDB operator
-    // such that { averageCost: { $lte: 10000 }} but now, we got { averageCost: { lte: 10000 }}
-    // therefore, somehow, we got to put $ sign in there.
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
-
-    // After the code, we can find data whose averageCost is less or equal to 10000.
-    // as well as we can get whose housing is true.
-    query = Bootcamp.find(JSON.parse(queryStr)).populate('courses');
-
-    // Select Fields
-    // query for selection should be just like this ?select=housing,name 
-    // i should know that the form of selection of query is select('<value1> <value2>') which means
-    // it's divided by white space. 
-    if(req.query.select){
-        const fields = req.query.select.split(',').join(' ');
-        query.select(fields);
-    }
-    
-    // Sort
-    // query for sort should be just like this ?sort=name
-    if(req.query.sort){
-        const sortBy = req.query.sort.split(',').join(' ');
-        query = query.sort(sortBy);
-    } else {
-        query = query.sort('-createdAt');
-    }
-
-    // Pagination
-    // page is showing a data from the 'page' given by query
-    // limit is how many datas it's gonna show  .
-
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 25;
-    const startIdx = (page - 1);
-    const endIdx = page;
-    const total = await Bootcamp.countDocuments();
-
-    // Basically, skip function will skip the datas up to the given value 
-    query = query.skip(startIdx).limit(limit);
-
-    const bootcamps = await query;
-
-    // Pagination result
-    const pagination = {};
-
-    if(endIdx < total) {
-        pagination.next = {
-            page: page + 1,
-            limit
-        };
-    }
-
-    if(startIdx > 0) {
-        pagination.prev = {
-            page: page - 1,
-            limit
-        };
-    }
-
-    res.status(200).json({ success: true, cout: bootcamps.length, pagination, data: bootcamps });
+    res.status(200).json(res.advancedResults);
 });
 
 // @desc    Get single bootcamp
