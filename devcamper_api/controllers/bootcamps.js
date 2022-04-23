@@ -24,10 +24,12 @@ HTTP 헤더에서 cache-control 헤더를 통해 캐시 옵션을 지정할 수 
  */
 
 const Bootcamp = require('../models/Bootcamp');
-const ErrorResponse = require('../utils/errorResponse');
-const asyncHandler = require('../middleware/async');
+ 
 const geocoder = require('../utils/geocoder');
 const path = require('path');
+const ErrorResponse = require('../utils/errorResponse');
+const asyncHandler = require('../middleware/async');
+
 
 
 // @desc    Get all bootcamps
@@ -72,7 +74,19 @@ exports.getBootcamp = asyncHandler(async (req, res, next) => {
 // @access  Private 
 exports.createBootcamp = asyncHandler(async (req, res, next) => {
     // res.status(200).json({ success: true, msg: 'Create new bootcamp' });
-    //console.log(req.body);
+    
+    // Add user to req.body
+    req.body.user = req.user.id;
+
+    // Check for published bootcamp
+    const publishedBootcamp = await Bootcamp.findOne({ user: req.user.id });
+
+    if(publishedBootcamp && req.user.role !== 'admin'){
+        return next(new ErrorResponse(
+            `The user with ID ${req.user.id} has already pushlished a bootcamp`, 
+            400)
+        );
+    }
 
     const bootcamp = await Bootcamp.create(req.body);
 
