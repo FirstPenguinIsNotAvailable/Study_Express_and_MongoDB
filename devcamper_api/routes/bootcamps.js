@@ -24,7 +24,7 @@ const courseRouter = require('./courses');
 
 const router = express.Router();
 
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 
 // Re-route into other resource routers
@@ -34,7 +34,7 @@ const { protect } = require('../middleware/auth');
 // eventually, we can implement /api/v1/bootcamps/:bootcampId/courses here.
 router.use('/:bootcampId/courses', courseRouter);
 
-router.route('/:id/photo').put(protect, uploadBootcampPhoto);
+router.route('/:id/photo').put(protect, authorize('publisher', 'admin'), uploadBootcampPhoto);
 
 
 router
@@ -42,12 +42,12 @@ router
     .get(advancedResults(Bootcamp, 'courses'), getBootcamps)
     // router.METHOD(path, [callback, ...] callback)
     // basically, after executing protect, run createBootcamp
-    .post(protect, createBootcamp)
+    .post(protect, authorize('publisher', 'admin'), createBootcamp)
 
 router.route('/:id')
     .get(getBootcamp)
-    .put(protect, updateBootcamp)
-    .delete(protect, deleteBootcamp);
+    .put(protect, authorize('publisher', 'admin'), updateBootcamp)
+    .delete(protect, authorize('publisher', 'admin'), deleteBootcamp);
 
 router
     .route('/radius/:zipcode/:distance')
