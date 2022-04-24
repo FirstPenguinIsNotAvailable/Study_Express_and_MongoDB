@@ -52,6 +52,8 @@ const CourseSchema = new mongoose.Schema({
 CourseSchema.statics.getAverageCost = async function(bootcampId){
     /**
      * * The order of implementation for aggregate
+     * aggregate: https://masteringjs.io/tutorials/mongoose/aggregate
+     * 
      * => collection > $project > $match > $group > $sort > $skip > $limit > $unwind > $out
      * 
      * * Aggregation Expression Overvie
@@ -62,7 +64,7 @@ CourseSchema.statics.getAverageCost = async function(bootcampId){
      * 
      */
 
-    // I think "this" here means this Model
+    // I think "this" here means this montoow3
     // therefore, we can do some operation for aggregate in speicific schema of the model.
     const obj = await this.aggregate([
         {

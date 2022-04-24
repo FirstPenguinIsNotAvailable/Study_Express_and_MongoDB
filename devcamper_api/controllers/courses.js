@@ -22,7 +22,7 @@ exports.getCourses = asyncHandler(async (req, res, next) => {
     }
 });
 
-// @desc    Get all course
+// @desc    Get a course
 // @route   Get /api/v1/courses/:id
 // @access  Public
 
